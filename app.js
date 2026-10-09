@@ -1,7 +1,7 @@
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
 
-let historyData = []; // Menyimpan cache data untuk ekspor Excel
+let historyData = [];
 
 function showView(name) {
   $("view-loading").classList.toggle("hidden", name !== "loading");
@@ -16,12 +16,20 @@ function toast(msg) {
   setTimeout(() => { t.style.display = "none"; }, 3000);
 }
 
+// Konversi username biasa menjadi format email dummy untuk Supabase Auth
+function usernameToEmail(username) {
+  const cleanUser = username.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  return `${cleanUser}@gudang.local`;
+}
+
 /* ================= AUTENTIKASI (LOGIN & LOGOUT) ================= */
 
 async function checkSession() {
   const { data } = await sb.auth.getSession();
   if (data.session) {
-    $("user-info").textContent = data.session.user.email;
+    const email = data.session.user.email || "";
+    const username = email.split("@")[0]; // Ambil nama username dari email
+    $("user-info").textContent = username;
     showView("main");
     loadHistory();
   } else {
@@ -34,13 +42,24 @@ $("login-form").addEventListener("submit", async (e) => {
   const btn = $("login-btn");
   const msg = $("login-error");
 
+  const inputUsername = $("username").value.trim();
+  const password = $("password").value;
+
+  if (!inputUsername) {
+    msg.textContent = "Username tidak boleh kosong.";
+    return;
+  }
+
   msg.textContent = "";
   btn.disabled = true;
   btn.textContent = "Memproses...";
 
+  // Kirim email dummy (contoh: admin@gudang.local) ke Supabase Auth
+  const emailDummy = usernameToEmail(inputUsername);
+
   const { error } = await sb.auth.signInWithPassword({
-    email: $("email").value,
-    password: $("password").value
+    email: emailDummy,
+    password: password
   });
 
   btn.disabled = false;
@@ -48,7 +67,7 @@ $("login-form").addEventListener("submit", async (e) => {
 
   if (error) {
     msg.textContent = error.message.includes("Invalid login credentials")
-      ? "Email atau password salah."
+      ? "Username atau password salah."
       : "Gagal masuk: " + error.message;
   } else {
     checkSession();
