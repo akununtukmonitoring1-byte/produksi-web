@@ -8,7 +8,29 @@ function toast(msg) {
   setTimeout(() => { t.style.display = "none"; }, 3000);
 }
 
-// Muat riwayat laporan
+// Otomatis pindah fokus ke kotak berikutnya saat mengetik angka
+const digitInputs = [ $("d1"), $("d2"), $("d3"), $("d4"), $("d5"), $("d6"), $("d7") ];
+
+digitInputs.forEach((input, idx) => {
+  input.addEventListener("input", (e) => {
+    const val = e.target.value;
+    if (val && !/^[0-9]$/.test(val)) {
+      e.target.value = "";
+      return;
+    }
+    if (val && idx < digitInputs.length - 1) {
+      digitInputs[idx + 1].focus();
+    }
+  });
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Backspace" && !e.target.value && idx > 0) {
+      digitInputs[idx - 1].focus();
+    }
+  });
+});
+
+// Load Riwayat
 async function loadHistory() {
   const body = $("history-body");
   const { data, error } = await sb
@@ -22,22 +44,22 @@ async function loadHistory() {
   }
 
   if (data.length === 0) {
-    body.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#6b7280;">Belum ada data produksi.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#6b7280;">Belum ada catatan meteran.</td></tr>`;
     return;
   }
 
   body.innerHTML = data.map((d) => {
     const waktu = new Date(d.created_at).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
-    const angkaList = `1: ${d.angka_1} | 2: ${d.angka_2} | 3: ${d.angka_3} | 4: ${d.angka_4} | 5: ${d.angka_5} | 6: ${d.angka_6} | 7: ${d.angka_7}`;
+    const angkaCombined = `${d.angka_1}${d.angka_2}${d.angka_3}${d.angka_4}${d.angka_5}${d.angka_6}${d.angka_7}`;
     
     return `
       <tr>
-        <td>${waktu}</td>
+        <td><small>${waktu}</small></td>
         <td>
-          ${d.foto_url ? `<a href="${d.foto_url}" target="_blank"><img src="${d.foto_url}" class="img-thumb" alt="Foto"></a>` : '-'}
+          ${d.foto_url ? `<a href="${d.foto_url}" target="_blank"><img src="${d.foto_url}" class="img-thumb" alt="Foto Meteran"></a>` : '-'}
         </td>
-        <td><small>${angkaList}</small></td>
-        <td>${d.keterangan || '-'}</td>
+        <td><span class="digit-badge">${angkaCombined}</span> m³</td>
+        <td><small>${d.keterangan || '-'}</small></td>
       </tr>
     `;
   }).join("");
@@ -53,7 +75,7 @@ $("prod-form").addEventListener("submit", async (e) => {
   msg.textContent = "";
 
   if (!fileInput.files || fileInput.files.length === 0) {
-    msg.textContent = "Lampirkan foto terlebih dahulu.";
+    msg.textContent = "Lampirkan foto meteran terlebih dahulu.";
     return;
   }
 
@@ -64,7 +86,7 @@ $("prod-form").addEventListener("submit", async (e) => {
     const file = fileInput.files[0];
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-    const filePath = `produksi/${fileName}`;
+    const filePath = `meteran/${fileName}`;
 
     // 1. Upload ke Supabase Storage
     const { error: uploadError } = await sb.storage
@@ -73,37 +95,38 @@ $("prod-form").addEventListener("submit", async (e) => {
 
     if (uploadError) throw uploadError;
 
-    // 2. Dapatkan URL foto
+    // 2. Ambil URL foto
     const { data: urlData } = sb.storage
       .from("produksi-foto")
       .getPublicUrl(filePath);
 
-    // 3. Simpan data ke tabel hasil_produksi
+    // 3. Simpan data 7 digit angka ke database
     const { error: dbError } = await sb.from("hasil_produksi").insert({
-      angka_1: Number($("a1").value),
-      angka_2: Number($("a2").value),
-      angka_3: Number($("a3").value),
-      angka_4: Number($("a4").value),
-      angka_5: Number($("a5").value),
-      angka_6: Number($("a6").value),
-      angka_7: Number($("a7").value),
+      angka_1: Number($("d1").value),
+      angka_2: Number($("d2").value),
+      angka_3: Number($("d3").value),
+      angka_4: Number($("d4").value),
+      angka_5: Number($("d5").value),
+      angka_6: Number($("d6").value),
+      angka_7: Number($("d7").value),
       keterangan: $("p-ket").value.trim() || null,
       foto_url: urlData.publicUrl
     });
 
     if (dbError) throw dbError;
 
-    toast("Data produksi berhasil disimpan!");
+    toast("Data meteran berhasil disimpan!");
     $("prod-form").reset();
+    digitInputs[0].focus();
     loadHistory();
 
   } catch (err) {
     msg.textContent = "Gagal menyimpan: " + err.message;
   } finally {
     btn.disabled = false;
-    btn.textContent = "Simpan Hasil Produksi";
+    btn.textContent = "Simpan Data Meteran";
   }
 });
 
-// Jalankan saat pertama dimuat
+// Jalankan saat halaman dibuka
 loadHistory();
