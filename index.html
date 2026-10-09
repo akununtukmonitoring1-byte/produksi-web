@@ -54,7 +54,7 @@
       color: #334155;
     }
 
-    input[type="email"], input[type="password"], input[type="file"], textarea {
+    input[type="text"], input[type="password"], input[type="file"], textarea {
       width: 100%;
       padding: 10px;
       border: 1px solid #cbd5e1;
@@ -176,13 +176,13 @@
     <!-- Halaman Login -->
     <div id="view-login" class="card hidden">
       <h1>Login Monitoring</h1>
-      <p class="subtitle">Masuk dengan akun terdaftar</p>
+      <p class="subtitle">Masuk dengan username dan password</p>
       <form id="login-form">
-        <label for="email">Email</label>
-        <input type="email" id="email" required placeholder="email@contoh.com">
+        <label for="username">Username</label>
+        <input type="text" id="username" required placeholder="misal: admin / operator1" autocomplete="username">
 
         <label for="password">Password</label>
-        <input type="password" id="password" required placeholder="******">
+        <input type="password" id="password" required placeholder="******" autocomplete="current-password">
 
         <p id="login-error" class="error"></p>
         <button id="login-btn" type="submit">Masuk</button>
@@ -192,7 +192,7 @@
     <!-- Halaman Utama (Main) -->
     <div id="view-main" class="hidden">
       <div class="topbar">
-        <span id="user-info">Pengguna</span>
+        <span>Pengguna: <strong id="user-info">-</strong></span>
         <button id="logout-btn" class="secondary" style="width: auto; margin: 0; padding: 6px 12px; font-size: 0.8rem;">Keluar</button>
       </div>
 
