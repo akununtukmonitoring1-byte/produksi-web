@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pencatatan Meteran Pompa</title>
+  <title>Monitoring Meteran Air</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -14,9 +14,11 @@
       padding: 20px 12px;
     }
     .container {
-      max-width: 600px;
+      max-width: 650px;
       margin: 0 auto;
     }
+    .hidden { display: none !important; }
+    
     .card {
       background: #fff;
       padding: 24px;
@@ -31,16 +33,37 @@
       font-size: 0.9rem;
       margin-bottom: 20px;
     }
+
+    /* Topbar User */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding: 8px 12px;
+      background: #e2e8f0;
+      border-radius: 10px;
+      font-size: 0.9rem;
+    }
     
     label {
       display: block;
-      margin: 16px 0 8px;
+      margin: 14px 0 6px;
       font-size: 0.9rem;
       font-weight: 600;
       color: #334155;
     }
 
-    /* Tampilan Kotak Digital Meteran */
+    input[type="email"], input[type="password"], input[type="file"], textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font: inherit;
+      background: #f8fafc;
+    }
+
+    /* Meter Digital Input */
     .meter-container {
       display: flex;
       justify-content: center;
@@ -49,7 +72,7 @@
       padding: 16px;
       border-radius: 12px;
       box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
     .meter-box {
       width: 44px;
@@ -62,7 +85,6 @@
       background: #ffffff;
       color: #0f172a;
       outline: none;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
     .meter-box:focus {
       border-color: #2563eb;
@@ -73,34 +95,41 @@
       font-weight: bold;
       color: #2563eb;
       font-size: 1.1rem;
-      margin-top: -8px;
       margin-bottom: 16px;
-    }
-
-    input[type="file"], textarea {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      font: inherit;
-      background: #f8fafc;
     }
 
     button {
       background: #2563eb;
       color: #fff;
       border: 0;
-      padding: 14px 18px;
+      padding: 12px 18px;
       border-radius: 10px;
       cursor: pointer;
       font-weight: 600;
-      font-size: 1rem;
+      font-size: 0.95rem;
       width: 100%;
-      margin-top: 20px;
+      margin-top: 16px;
       transition: background 0.2s;
     }
     button:hover { background: #1d4ed8; }
+    button.secondary { background: #64748b; }
+    button.secondary:hover { background: #475569; }
+    button.success { background: #16a34a; }
+    button.success:hover { background: #15803d; }
     button:disabled { opacity: 0.6; cursor: default; }
+
+    .header-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .header-actions button {
+      width: auto;
+      margin-top: 0;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+    }
 
     .error { color: #dc2626; font-size: 0.88rem; margin-top: 10px; text-align: center; }
     
@@ -119,7 +148,7 @@
       letter-spacing: 2px;
       font-size: 1rem;
     }
-    .img-thumb { width: 55px; height: 55px; object-fit: cover; border-radius: 8px; border: 1px solid #cbd5e1; }
+    .img-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1; }
     
     #toast {
       position: fixed;
@@ -140,60 +169,93 @@
 <body>
 
   <div class="container">
-    <div class="card">
-      <h1>Monitoring Meteran Air</h1>
-      <p class="subtitle">Masukkan 7 digit angka yang tertera pada Flow Meter</p>
 
-      <form id="prod-form">
-        <label>Angka Meteran (7 Digit):</label>
-        
-        <!-- Input 7 Digit Sejajar ala Meteran Air -->
-        <div class="meter-container">
-          <input type="text" maxlength="1" pattern="[0-9]" class="meter-box" id="d1" inputmode="numeric" required>
-          <input type="text" maxlength="1" pattern="[0-9]" class="meter-box" id="d2" inputmode="numeric" required>
-          <input type="text" maxlength="1" pattern="[0-9]" class="meter-box" id="d3" inputmode="numeric" required>
-          <input type="text" maxlength="1" pattern="[0-9]" class="meter-box" id="d4" inputmode="numeric" required>
-          <input type="text" maxlength="1" pattern="[0-9]" class="meter-box" id="d5" inputmode="numeric" required>
-          <input type="text" maxlength="1" pattern="[0-9]" class="meter-box" id="d6" inputmode="numeric" required>
-          <input type="text" maxlength="1" pattern="[0-9]" class="meter-box" id="d7" inputmode="numeric" required>
-        </div>
-        <div class="unit-tag">m³</div>
+    <!-- View Loading -->
+    <p id="view-loading" style="text-align: center; margin-top: 20vh;">Memuat...</p>
 
-        <label for="p-foto">Lampirkan Foto Meteran Air</label>
-        <input type="file" id="p-foto" accept="image/*" required>
+    <!-- Halaman Login -->
+    <div id="view-login" class="card hidden">
+      <h1>Login Monitoring</h1>
+      <p class="subtitle">Masuk dengan akun terdaftar</p>
+      <form id="login-form">
+        <label for="email">Email</label>
+        <input type="email" id="email" required placeholder="email@contoh.com">
 
-        <label for="p-ket">Keterangan / Catatan (opsional)</label>
-        <textarea id="p-ket" rows="2" placeholder="Contoh: Meteran Pompa Utama"></textarea>
+        <label for="password">Password</label>
+        <input type="password" id="password" required placeholder="******">
 
-        <p id="form-msg" class="error"></p>
-        <button id="save-btn" type="submit">Simpan Data Meteran</button>
+        <p id="login-error" class="error"></p>
+        <button id="login-btn" type="submit">Masuk</button>
       </form>
     </div>
 
-    <!-- Riwayat Data -->
-    <div class="card">
-      <h2>Riwayat Catatan</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Waktu</th>
-              <th>Foto</th>
-              <th>Nilai Meteran</th>
-              <th>Catatan</th>
-            </tr>
-          </thead>
-          <tbody id="history-body">
-            <tr><td colspan="4" style="text-align:center;">Memuat data...</td></tr>
-          </tbody>
-        </table>
+    <!-- Halaman Utama (Main) -->
+    <div id="view-main" class="hidden">
+      <div class="topbar">
+        <span id="user-info">Pengguna</span>
+        <button id="logout-btn" class="secondary" style="width: auto; margin: 0; padding: 6px 12px; font-size: 0.8rem;">Keluar</button>
+      </div>
+
+      <!-- Form Input Meteran -->
+      <div class="card">
+        <h2>Input Meteran Air</h2>
+        <p class="subtitle">Masukkan 7 digit angka dari Flow Meter</p>
+
+        <form id="prod-form">
+          <label>Angka Meteran (7 Digit):</label>
+          <div class="meter-container">
+            <input type="text" maxlength="1" pattern="[0-9]" class="meter-box" id="d1" inputmode="numeric" required>
+            <input type="text" maxlength="1" pattern="[0-9]" class="meter-box" id="d2" inputmode="numeric" required>
+            <input type="text" maxlength="1" pattern="[0-9]" class="meter-box" id="d3" inputmode="numeric" required>
+            <input type="text" maxlength="1" pattern="[0-9]" class="meter-box" id="d4" inputmode="numeric" required>
+            <input type="text" maxlength="1" pattern="[0-9]" class="meter-box" id="d5" inputmode="numeric" required>
+            <input type="text" maxlength="1" pattern="[0-9]" class="meter-box" id="d6" inputmode="numeric" required>
+            <input type="text" maxlength="1" pattern="[0-9]" class="meter-box" id="d7" inputmode="numeric" required>
+          </div>
+          <div class="unit-tag">m³</div>
+
+          <label for="p-foto">Lampirkan Foto Meteran Air</label>
+          <input type="file" id="p-foto" accept="image/*" required>
+
+          <label for="p-ket">Keterangan / Catatan (opsional)</label>
+          <textarea id="p-ket" rows="2" placeholder="Contoh: Meteran Pompa Utama"></textarea>
+
+          <p id="form-msg" class="error"></p>
+          <button id="save-btn" type="submit">Simpan Data Meteran</button>
+        </form>
+      </div>
+
+      <!-- Tabel Riwayat Catatan & Ekspor -->
+      <div class="card">
+        <div class="header-actions">
+          <h2 style="margin: 0;">Riwayat Catatan</h2>
+          <button id="export-excel-btn" class="success" type="button">📊 Unduh Excel</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Waktu</th>
+                <th>Foto</th>
+                <th>Nilai Meteran</th>
+                <th>Catatan</th>
+              </tr>
+            </thead>
+            <tbody id="history-body">
+              <tr><td colspan="4" style="text-align:center;">Memuat data...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
+
   </div>
 
   <div id="toast">Data berhasil disimpan!</div>
 
+  <!-- Library External -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
