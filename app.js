@@ -1,244 +1,226 @@
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const $ = (id) => document.getElementById(id);
+// Pastikan config.js mendefinisikan SUPABASE_URL dan SUPABASE_KEY
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let historyData = [];
+// Elemen DOM Utama
+const viewLoading = document.getElementById('view-loading');
+const viewLogin = document.getElementById('view-login');
+const viewMain = document.getElementById('view-main');
+const loginForm = document.getElementById('login-form');
+const loginError = document.getElementById('login-error');
+const logoutBtn = document.getElementById('logout-btn');
+const userInfo = document.getElementById('user-info');
 
-function showView(name) {
-  $("view-loading").classList.toggle("hidden", name !== "loading");
-  $("view-login").classList.toggle("hidden", name !== "login");
-  $("view-main").classList.toggle("hidden", name !== "main");
-}
+const meterForm = document.getElementById('meter-form');
+const meterMsg = document.getElementById('meter-msg');
+const digitInputs = document.querySelectorAll('.onda-digit-input');
+const meterValueInput = document.getElementById('meter-value');
+const riwayatBody = document.getElementById('riwayat-body');
+const exportExcelBtn = document.getElementById('export-excel-btn');
+const toast = document.getElementById('toast');
 
-function toast(msg) {
-  const t = $("toast");
-  t.textContent = msg;
-  t.style.display = "block";
-  setTimeout(() => { t.style.display = "none"; }, 3000);
-}
+// Navigasi Tab
+const tabs = document.querySelectorAll('.tab');
+const pages = {
+  catat: document.getElementById('page-catat'),
+  riwayat: document.getElementById('page-riwayat')
+};
 
-// Konversi username biasa menjadi format email dummy untuk Supabase Auth
-function usernameToEmail(username) {
-  const cleanUser = username.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
-  return `${cleanUser}@gudang.local`;
-}
-
-/* ================= AUTENTIKASI (LOGIN & LOGOUT) ================= */
-
-async function checkSession() {
-  const { data } = await sb.auth.getSession();
-  if (data.session) {
-    const email = data.session.user.email || "";
-    const username = email.split("@")[0]; // Ambil nama username dari email
-    $("user-info").textContent = username;
-    showView("main");
-    loadHistory();
-  } else {
-    showView("login");
-  }
-}
-
-$("login-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const btn = $("login-btn");
-  const msg = $("login-error");
-
-  const inputUsername = $("username").value.trim();
-  const password = $("password").value;
-
-  if (!inputUsername) {
-    msg.textContent = "Username tidak boleh kosong.";
-    return;
-  }
-
-  msg.textContent = "";
-  btn.disabled = true;
-  btn.textContent = "Memproses...";
-
-  // Kirim email dummy (contoh: admin@gudang.local) ke Supabase Auth
-  const emailDummy = usernameToEmail(inputUsername);
-
-  const { error } = await sb.auth.signInWithPassword({
-    email: emailDummy,
-    password: password
-  });
-
-  btn.disabled = false;
-  btn.textContent = "Masuk";
-
-  if (error) {
-    msg.textContent = error.message.includes("Invalid login credentials")
-      ? "Username atau password salah."
-      : "Gagal masuk: " + error.message;
-  } else {
-    checkSession();
-  }
-});
-
-$("logout-btn").addEventListener("click", async () => {
-  await sb.auth.signOut();
-  $("password").value = "";
-  checkSession();
-});
-
-/* ================= INPUT 7 DIGIT METERAN ================= */
-
-const digitInputs = [ $("d1"), $("d2"), $("d3"), $("d4"), $("d5"), $("d6"), $("d7") ];
-
-digitInputs.forEach((input, idx) => {
-  input.addEventListener("input", (e) => {
-    const val = e.target.value;
-    if (val && !/^[0-9]$/.test(val)) {
-      e.target.value = "";
-      return;
-    }
-    if (val && idx < digitInputs.length - 1) {
-      digitInputs[idx + 1].focus();
-    }
-  });
-
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Backspace" && !e.target.value && idx > 0) {
-      digitInputs[idx - 1].focus();
-    }
-  });
-});
-
-/* ================= MUAT DATA & KELOLA DATA ================= */
-
-async function loadHistory() {
-  const body = $("history-body");
-  const { data, error } = await sb
-    .from("hasil_produksi")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    body.innerHTML = `<tr><td colspan="4" class="error">Gagal memuat: ${error.message}</td></tr>`;
-    return;
-  }
-
-  historyData = data || [];
-
-  if (historyData.length === 0) {
-    body.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#6b7280;">Belum ada catatan meteran.</td></tr>`;
-    return;
-  }
-
-  body.innerHTML = historyData.map((d) => {
-    const waktu = new Date(d.created_at).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
-    const angkaCombined = `${d.angka_1}${d.angka_2}${d.angka_3}${d.angka_4}${d.angka_5}${d.angka_6}${d.angka_7}`;
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
     
-    return `
-      <tr>
-        <td><small>${waktu}</small></td>
-        <td>
-          ${d.foto_url ? `<a href="${d.foto_url}" target="_blank"><img src="${d.foto_url}" class="img-thumb" alt="Foto"></a>` : '-'}
-        </td>
-        <td><span class="digit-badge">${angkaCombined}</span> m³</td>
-        <td><small>${d.keterangan || '-'}</small></td>
-      </tr>
-    `;
-  }).join("");
+    const target = tab.getAttribute('data-page');
+    Object.keys(pages).forEach(key => {
+      if (key === target) {
+        pages[key].classList.remove('hidden');
+      } else {
+        pages[key].classList.add('hidden');
+      }
+    });
+  });
+});
+
+// Cek Sesi Saat Aplikasi Dimuat
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+      showMainView(session.user);
+    } else {
+      showLoginView();
+    }
+  } catch (err) {
+    console.error(err);
+    showLoginView();
+  }
+});
+
+function showLoginView() {
+  viewLoading.classList.add('hidden');
+  viewLogin.classList.remove('hidden');
+  viewMain.classList.add('hidden');
 }
 
-// Simpan Data Meteran Baru
-$("prod-form").addEventListener("submit", async (e) => {
+function showMainView(user) {
+  viewLoading.classList.add('hidden');
+  viewLogin.classList.add('hidden');
+  viewMain.classList.remove('hidden');
+  userInfo.textContent = user.email;
+  loadRiwayat();
+}
+
+// Proses Login
+loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const btn = $("save-btn");
-  const msg = $("form-msg");
-  const fileInput = $("p-foto");
+  loginError.textContent = '';
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
 
-  msg.textContent = "";
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) {
+    loginError.textContent = 'Gagal masuk: ' + error.message;
+  } else {
+    showMainView(data.user);
+  }
+});
 
-  if (!fileInput.files || fileInput.files.length === 0) {
-    msg.textContent = "Lampirkan foto meteran terlebih dahulu.";
+// Proses Logout
+logoutBtn.addEventListener('click', async () => {
+  await supabaseClient.auth.signOut();
+  showLoginView();
+});
+
+// Notifikasi Toast
+function showToast(message) {
+  toast.textContent = message;
+  toast.classList.remove('hidden');
+  setTimeout(() => {
+    toast.classList.add('hidden');
+  }, 3000);
+}
+
+// Simpan Data Meteran
+meterForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  meterMsg.textContent = '';
+  
+  const meterVal = meterValueInput.value;
+  if (!meterVal || meterVal.length < 7) {
+    meterMsg.textContent = 'Harap isi lengkap 7 digit angka meteran!';
     return;
   }
 
-  btn.disabled = true;
-  btn.textContent = "Mengunggah foto & menyimpan...";
+  const fotoFile = document.getElementById('meter-foto').files[0];
+  const keterangan = document.getElementById('meter-ket').value;
+  const { data: { user } } = await supabaseClient.auth.getUser();
+
+  let fotoUrl = '';
 
   try {
-    const file = fileInput.files[0];
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-    const filePath = `meteran/${fileName}`;
+    // 1. Upload Foto jika ada
+    if (fotoFile) {
+      const fileName = `${Date.now()}_${fotoFile.name}`;
+      const { data: uploadData, error: uploadError } = await supabaseClient.storage
+        .from('bukti-produksi') // Sesuaikan nama bucket storage Anda di Supabase
+        .upload(fileName, fotoFile);
 
-    // Upload ke Storage
-    const { error: uploadError } = await sb.storage
-      .from("produksi-foto")
-      .upload(filePath, file);
+      if (uploadError) throw uploadError;
 
-    if (uploadError) throw uploadError;
+      const { data: publicUrlData } = supabaseClient.storage
+        .from('bukti-produksi')
+        .getPublicUrl(fileName);
+      
+      fotoUrl = publicUrlData.publicUrl;
+    }
 
-    // Ambil Public URL
-    const { data: urlData } = sb.storage
-      .from("produksi-foto")
-      .getPublicUrl(filePath);
+    // 2. Simpan Data ke Tabel Database (asumsi nama tabel: pencatatan_meter)
+    const { error: insertError } = await supabaseClient
+      .from('pencatatan_meter')
+      .insert([
+        {
+          nilai_meteran: meterVal,
+          foto_url: fotoUrl,
+          keterangan: keterangan,
+          petugas: user.email,
+          created_at: new Date()
+        }
+      ]);
 
-    // Insert ke Database
-    const { error: dbError } = await sb.from("hasil_produksi").insert({
-      angka_1: Number($("d1").value),
-      angka_2: Number($("d2").value),
-      angka_3: Number($("d3").value),
-      angka_4: Number($("d4").value),
-      angka_5: Number($("d5").value),
-      angka_6: Number($("d6").value),
-      angka_7: Number($("d7").value),
-      keterangan: $("p-ket").value.trim() || null,
-      foto_url: urlData.publicUrl
-    });
+    if (insertError) throw insertError;
 
-    if (dbError) throw dbError;
-
-    toast("Data meteran berhasil disimpan!");
-    $("prod-form").reset();
-    digitInputs[0].focus();
-    loadHistory();
+    showToast('Pencatatan berhasil disimpan!');
+    meterForm.reset();
+    // Reset kotak digit
+    digitInputs.forEach(input => input.value = '');
+    meterValueInput.value = '';
+    loadRiwayat();
 
   } catch (err) {
-    msg.textContent = "Gagal menyimpan: " + err.message;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Simpan Data Meteran";
+    meterMsg.textContent = 'Terjadi kesalahan: ' + err.message;
   }
 });
 
-/* ================= FITUR EKSPOR EXCEL ================= */
+// Muat Riwayat Data
+async function loadRiwayat() {
+  riwayatBody.innerHTML = `<tr><td colspan="5" class="empty">Memuat data...</td></tr>`;
+  
+  const { data, error } = await supabaseClient
+    .from('pencatatan_meter')
+    .select('*')
+    .order('created_at', { ascending: false });
 
-$("export-excel-btn").addEventListener("click", () => {
-  if (!historyData || historyData.length === 0) {
-    alert("Belum ada data untuk diekspor!");
+  if (error) {
+    riwayatBody.innerHTML = `<tr><td colspan="5" class="empty" style="color: #dc2626;">Gagal memuat data.</td></tr>`;
     return;
   }
 
-  const excelRows = [
-    ["No", "Waktu Pencatatan", "Angka Meteran (m³)", "Keterangan", "Link Foto Bukti"]
-  ];
+  if (!data || data.length === 0) {
+    riwayatBody.innerHTML = `<tr><td colspan="5" class="empty">Belum ada riwayat pencatatan.</td></tr>`;
+    return;
+  }
 
-  historyData.forEach((d, i) => {
-    const waktu = new Date(d.created_at).toLocaleString("id-ID");
-    const angkaCombined = `${d.angka_1}${d.angka_2}${d.angka_3}${d.angka_4}${d.angka_5}${d.angka_6}${d.angka_7}`;
-    
-    excelRows.push([
-      i + 1,
-      waktu,
-      angkaCombined,
-      d.keterangan || "-",
-      d.foto_url || "-"
-    ]);
+  riwayatBody.innerHTML = '';
+  data.forEach(item => {
+    const tr = document.createElement('tr');
+    const tanggal = new Date(item.created_at).toLocaleString('id-ID');
+    const fotoHtml = item.foto_url 
+      ? `<a href="${item.foto_url}" target="_blank"><img src="${item.foto_url}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;"></a>` 
+      : 'Tidak ada';
+
+    tr.innerHTML = `
+      <td>${tanggal}</td>
+      <td><strong>${item.nilai_meteran}</strong></td>
+      <td>${fotoHtml}</td>
+      <td>${item.keterangan || '-'}</td>
+      <td>${item.petugas || '-'}</td>
+    `;
+    riwayatBody.appendChild(tr);
   });
+}
 
-  const ws = XLSX.utils.aoa_to_sheet(excelRows);
-  ws["!cols"] = [{ wch: 6 }, { wch: 22 }, { wch: 20 }, { wch: 30 }, { wch: 50 }];
+// Ekspor ke Excel menggunakan SheetJS
+exportExcelBtn.addEventListener('click', async () => {
+  const { data, error } = await supabaseClient
+    .from('pencatatan_meter')
+    .select('*')
+    .order('created_at', { ascending: false });
 
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Laporan Meteran Air");
+  if (error || !data || data.length === 0) {
+    alert('Tidak ada data untuk diekspor.');
+    return;
+  }
 
-  const dateStr = new Date().toISOString().split("T")[0];
-  XLSX.writeFile(wb, `Laporan_Meteran_Air_${dateStr}.xlsx`);
-  toast("File Excel diunduh!");
+  const excelData = data.map((item, index) => ({
+    No: index + 1,
+    Waktu: new Date(item.created_at).toLocaleString('id-ID'),
+    'Nilai Meteran (7 Digit)': item.nilai_meteran,
+    Keterangan: item.keterangan || '',
+    Petugas: item.petugas || ''
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(excelData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Riwayat Meteran");
+  XLSX.writeFile(workbook, "Laporan_Meteran_Air_Onda.xlsx");
 });
-
-/* ================= INISIALISASI ================= */
-checkSession();
