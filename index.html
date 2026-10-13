@@ -1,205 +1,368 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pencatatan Meteran Air - Flow Meter</title>
+
+  <!-- PWA & Meta Tags -->
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0284c7">
   <link rel="apple-touch-icon" href="/icon-192.png">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pencatatan Meteran Air - Flow Meter</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <style>
+    :root {
+      --primary: #0284c7;
+      --primary-hover: #0369a1;
+      --bg-surface: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #cbd5e1;
+      --focus-ring: rgba(2, 132, 199, 0.2);
+      --radius: 12px;
+    }
+
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: #f0f9ff;
-      color: #0f172a;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-surface);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
+
     .hidden { display: none !important; }
-    .center { text-align: center; margin-top: 20vh; }
-    .muted { color: #64748b; margin-top: 0; font-size: 0.9rem; }
-    .error { color: #dc2626; font-size: 0.9rem; min-height: 1.2em; margin: 8px 0 0; }
-    .success { color: #16a34a; font-size: 0.9rem; min-height: 1.2em; margin: 8px 0 0; }
-
-    /* Tombol */
-    button {
-      font: inherit;
-      cursor: pointer;
-      border: 0;
-      border-radius: 8px;
-      padding: 10px 14px;
-      background: #0284c7;
-      color: #fff;
-      font-weight: 500;
-      transition: background 0.2s;
+    
+    .center-screen {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
     }
-    button:hover { background: #0369a1; }
-    button:disabled { opacity: 0.6; cursor: default; }
-    button.secondary { background: #e2e8f0; color: #1e293b; }
-    button.secondary:hover { background: #cbd5e1; }
-    button.danger { background: #dc2626; }
-    .btn-block { width: 100%; margin-top: 16px; }
-    .btn-small { padding: 6px 10px; font-size: 0.85rem; }
 
-    /* Form & Input */
-    label { display: block; margin: 12px 0 4px; font-size: 0.9rem; font-weight: 500; }
-    input, select, textarea {
+    .muted { color: var(--text-muted); font-size: 0.875rem; margin-top: 4px; }
+    .error { color: #dc2626; font-size: 0.875rem; min-height: 1.25em; margin: 8px 0 0; font-weight: 500; }
+
+    /* Layout & Container */
+    .container {
+      max-width: 900px;
       width: 100%;
-      padding: 10px;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      font: inherit;
-      background: #fff;
-    }
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: #0284c7;
-      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+      margin: 24px auto;
+      padding: 0 16px;
     }
 
-    /* Format 7 Digit Angka Flow Meter */
-    .onda-digits-container {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
-      margin-top: 6px;
-    }
-    .onda-digit-input {
-      text-align: center;
-      font-size: 1.25rem;
-      font-weight: 700;
-      padding: 10px 0;
-      letter-spacing: normal;
-    }
-
-    /* Kartu Login */
-    .card {
-      max-width: 380px;
-      margin: 12vh auto 0;
-      background: #fff;
-      padding: 28px;
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    }
-    .card h1 { margin: 0 0 4px; font-size: 1.5rem; color: #0369a1; }
-
-    /* Halaman Utama & Topbar */
+    /* Topbar Navigation */
     .topbar {
+      background: var(--card-bg);
+      border-bottom: 1px solid #e2e8f0;
+      padding: 14px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .brand-title {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--primary-hover);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
       gap: 12px;
-      padding: 12px 20px;
-      background: #fff;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+      font-size: 0.9rem;
+      color: var(--text-muted);
     }
-    .user { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
-    .tabs { display: flex; gap: 6px; max-width: 1000px; margin: 16px auto 0; padding: 0 12px; }
-    .tab { background: #e2e8f0; color: #334155; }
-    .tab.active { background: #0284c7; color: #fff; }
-    .container { max-width: 1000px; margin: 16px auto 32px; padding: 0 12px; }
-    .section-title { font-size: 1.1rem; margin: 20px 0 8px; font-weight: 600; }
 
-    /* Panel & Card Content */
-    .panel {
-      background: #fff;
-      padding: 20px;
+    .user-name {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* Tabs Bar */
+    .tabs-bar {
+      display: flex;
+      gap: 8px;
+      max-width: 900px;
+      margin: 20px auto 0;
+      padding: 0 16px;
+    }
+
+    .tab-btn {
+      background: #e2e8f0;
+      color: #475569;
+      border: none;
+      padding: 10px 20px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover { background: #cbd5e1; }
+    .tab-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+    }
+
+    /* Cards & Panels */
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 32px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.04), 0 8px 10px -6px rgba(0,0,0,0.02);
+      width: 100%;
+    }
+
+    .login-card {
+      max-width: 400px;
+      margin: auto;
+    }
+
+    .panel-card {
+      max-width: 580px;
+      margin: 0 auto;
+    }
+
+    h1 { font-size: 1.5rem; margin: 0 0 6px; font-weight: 700; color: #0f172a; }
+    h2 { font-size: 1.2rem; margin: 0 0 6px; font-weight: 600; color: #0f172a; }
+
+    /* Form Controls */
+    label {
+      display: block;
+      margin: 16px 0 6px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="file"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      background: #ffffff;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+
+    /* 7-Digit Meter Display Box */
+    .onda-digits-container {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+      background: #0f172a;
+      padding: 12px;
       border-radius: 12px;
-      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
-      max-width: 540px;
     }
-    .panel h2 { margin: 0 0 4px; font-size: 1.15rem; color: #0369a1; }
 
-    /* Tabel */
-    .table-wrap {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
-      overflow-x: auto;
-      margin-top: 12px;
+    .onda-digit-input {
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      padding: 12px 0 !important;
+      color: #ffffff;
+      background: #1e293b !important;
+      border: 1px solid #334155 !important;
+      border-radius: 8px !important;
+      caret-color: var(--primary);
     }
-    table { width: 100%; border-collapse: collapse; min-width: 680px; }
-    th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #f1f5f9; }
-    thead th { background: #f8fafc; font-size: 0.85rem; color: #475569; font-weight: 600; }
-    td.empty { text-align: center; color: #64748b; padding: 32px; }
-    .badge { padding: 2px 8px; border-radius: 999px; font-size: 0.8rem; font-weight: 500; }
-    .badge.ok { background: #dcfce7; color: #166534; }
 
-    /* Notifikasi Toast */
+    .onda-digit-input:focus {
+      border-color: #38bdf8 !important;
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.3) !important;
+      background: #0f172a !important;
+    }
+
+    /* Buttons */
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 18px;
+      background: var(--primary);
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    button:hover { background: var(--primary-hover); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    button.secondary { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+    button.secondary:hover { background: #e2e8f0; }
+
+    .btn-block { width: 100%; margin-top: 20px; }
+    .btn-small { padding: 6px 12px; font-size: 0.85rem; }
+
+    /* Tables */
+    .table-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+      overflow: hidden;
+      margin-top: 16px;
+    }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 680px;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      padding: 14px 18px;
+      text-align: left;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    thead th {
+      background: #f8fafc;
+      color: #475569;
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    tbody tr:hover { background: #f8fafc; }
+    td.empty { text-align: center; color: var(--text-muted); padding: 40px; }
+
+    /* Toast Notification */
     #toast {
       position: fixed;
-      bottom: 24px;
+      bottom: 28px;
       left: 50%;
-      transform: translateX(-50%);
+      transform: translateX(-50%) translateY(100px);
       background: #0f172a;
-      color: #fff;
-      padding: 10px 20px;
+      color: #ffffff;
+      padding: 12px 24px;
       border-radius: 999px;
+      font-weight: 500;
       font-size: 0.9rem;
-      z-index: 50;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 100;
+    }
+
+    #toast.show {
+      transform: translateX(-50%) translateY(0);
     }
   </style>
 </head>
 <body>
 
-  <p id="view-loading" class="center">Memuat Aplikasi...</p>
+  <!-- Screen Loading Sesi -->
+  <div id="view-loading" class="center-screen">
+    <p class="muted">Memuat Sistem Pencatatan...</p>
+  </div>
 
   <!-- Halaman Login -->
-  <div id="view-login" class="card hidden">
-    <h1>Pencatatan Flow Meter</h1>
-    <p class="muted">Masuk untuk pencatatan meteran air</p>
-    <form id="login-form">
-      <label for="username">Username</label>
-      <input id="username" type="text" required placeholder="..........">
-      <label for="password">Password</label>
-      <input id="password" type="password" required placeholder="..........">
-      <p id="login-error" class="error"></p>
-      <button id="login-btn" class="btn-block" type="submit">Masuk</button>
-    </form>
+  <div id="view-login" class="center-screen hidden">
+    <div class="card login-card">
+      <h1>Flow Meter Air</h1>
+      <p class="muted">Masuk ke sistem pencatatan meteran</p>
+      
+      <form id="login-form">
+        <label for="username">Username</label>
+        <input id="username" type="text" required placeholder="Masukkan username" autocomplete="username">
+        
+        <label for="password">Password</label>
+        <input id="password" type="password" required placeholder="••••••••" autocomplete="current-password">
+        
+        <p id="login-error" class="error"></p>
+        <button id="login-btn" class="btn-block" type="submit">Masuk ke Sistem</button>
+      </form>
+    </div>
   </div>
-  
-  <!-- Halaman Utama -->
+
+  <!-- Halaman Utama (Dashboard) -->
   <div id="view-main" class="hidden">
+    <!-- Topbar Header -->
     <header class="topbar">
-      <strong>Pencatatan Meteran Air</strong>
-      <div class="user">
-        <span id="user-info"></span>
+      <div class="brand-title">
+        💧 <span>Pencatatan Meteran Air</span>
+      </div>
+      <div class="user-profile">
+        <span>Petugas: <strong id="user-info" class="user-name">-</strong></span>
         <button id="logout-btn" class="btn-small secondary" type="button">Keluar</button>
       </div>
     </header>
 
-    <nav class="tabs">
-      <button class="tab active" data-page="catat" type="button">Catat Meteran</button>
-      <button class="tab" data-page="riwayat" type="button">Riwayat & Laporan</button>
+    <!-- Navigasi Tab -->
+    <nav class="tabs-bar">
+      <button class="tab-btn active" data-page="catat" type="button">Catat Meteran</button>
+      <button class="tab-btn" data-page="riwayat" type="button">Riwayat & Laporan</button>
     </nav>
 
+    <!-- Konten Utama -->
     <main class="container">
 
-      <!-- Halaman: Catat Meteran -->
+      <!-- Section: Form Catat Meteran -->
       <section id="page-catat">
-        <div class="panel">
-          <h2>Input Angka Meteran Air</h2>
-          <p class="muted">Masukkan 7 digit angka sesuai tampilan pada Flow Meter</p>
+        <div class="card panel-card">
+          <h2>Input Meteran Air</h2>
+          <p class="muted">Isi 7 digit angka sesuai dengan yang tertera di Flow Meter.</p>
+
           <form id="meter-form">
-            <label>Angka 7 Digit (Flow Meter)</label>
+            <label>Angka Flow Meter (7 Digit)</label>
             <div class="onda-digits-container" id="onda-inputs">
-              <input type="text" maxlength="1" class="onda-digit-input" required pattern="[0-9]" inputmode="numeric">
-              <input type="text" maxlength="1" class="onda-digit-input" required pattern="[0-9]" inputmode="numeric">
-              <input type="text" maxlength="1" class="onda-digit-input" required pattern="[0-9]" inputmode="numeric">
-              <input type="text" maxlength="1" class="onda-digit-input" required pattern="[0-9]" inputmode="numeric">
-              <input type="text" maxlength="1" class="onda-digit-input" required pattern="[0-9]" inputmode="numeric">
-              <input type="text" maxlength="1" class="onda-digit-input" required pattern="[0-9]" inputmode="numeric">
-              <input type="text" maxlength="1" class="onda-digit-input" required pattern="[0-9]" inputmode="numeric">
+              <input type="text" maxlength="1" class="onda-digit-input" pattern="[0-9]" inputmode="numeric" required>
+              <input type="text" maxlength="1" class="onda-digit-input" pattern="[0-9]" inputmode="numeric" required>
+              <input type="text" maxlength="1" class="onda-digit-input" pattern="[0-9]" inputmode="numeric" required>
+              <input type="text" maxlength="1" class="onda-digit-input" pattern="[0-9]" inputmode="numeric" required>
+              <input type="text" maxlength="1" class="onda-digit-input" pattern="[0-9]" inputmode="numeric" required>
+              <input type="text" maxlength="1" class="onda-digit-input" pattern="[0-9]" inputmode="numeric" required>
+              <input type="text" maxlength="1" class="onda-digit-input" pattern="[0-9]" inputmode="numeric" required>
             </div>
-            <!-- Input tersembunyi untuk menampung gabungan 7 digit -->
+            <!-- Input tersembunyi yang menyimpan string gabungan 7 digit -->
             <input type="hidden" id="meter-value">
 
-            <label for="meter-foto">Lampiran Foto Meteran (Opsional)</label>
+            <label for="meter-foto">Lampiran Foto Bukti (Opsional)</label>
             <input id="meter-foto" type="file" accept="image/*">
 
-            <label for="meter-ket">Keterangan / Catatan</label>
-            <textarea id="meter-ket" rows="3" placeholder="Contoh: Kondisi normal, pembacaan akhir bulan..."></textarea>
+            <label for="meter-ket">Keterangan / Catatan Field</label>
+            <textarea id="meter-ket" rows="3" placeholder="Contoh: Kondisi fisik meteran bersih, pembacaan rutin shift pagi..."></textarea>
 
             <p id="meter-msg" class="error"></p>
             <button id="meter-btn" class="btn-block" type="submit">Simpan Pencatatan</button>
@@ -207,61 +370,119 @@
         </div>
       </section>
 
-      <!-- Halaman: Riwayat & Laporan -->
+      <!-- Section: Tabel Riwayat & Laporan -->
       <section id="page-riwayat" class="hidden">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <h2 class="section-title" style="margin: 0;">Riwayat Pencatatan</h2>
-          <button id="export-excel-btn" class="secondary btn-small" type="button">Unduh Excel</button>
+          <h2 style="margin: 0;">Laporan & Riwayat</h2>
+          <button id="export-excel-btn" class="secondary btn-small" type="button">Unduh File Excel</button>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Waktu</th>
-                <th>Nilai Meteran (7 Digit)</th>
-                <th>Foto</th>
-                <th>Keterangan</th>
-                <th>Petugas</th>
-              </tr>
-            </thead>
-            <tbody id="riwayat-body"></tbody>
-          </table>
+
+        <div class="table-card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Waktu Pencatatan</th>
+                  <th>Nilai Meteran</th>
+                  <th>Bukti Foto</th>
+                  <th>Keterangan</th>
+                  <th>Petugas</th>
+                </tr>
+              </thead>
+              <tbody id="riwayat-body">
+                <tr><td colspan="5" class="empty">Memuat data...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
     </main>
   </div>
 
-  <div id="toast" class="hidden"></div>
+  <!-- Toast Notification System -->
+  <div id="toast">Pencatatan berhasil disimpan!</div>
 
-  <!-- Skrip Pendukung (Supabase & SheetJS untuk Excel) -->
+  <!-- External Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="config.js"></script>
   <script src="app.js"></script>
-  
+
+  <!-- Script Penanganan 7-Digit Input (Termasuk Angka 0) -->
   <script>
-    // Skrip interaksi otomatis untuk 7 digit input (berpindah otomatis ke kotak berikutnya)
-    const digitInputs = document.querySelectorAll('.onda-digit-input');
-    digitInputs.forEach((input, index) => {
-      input.addEventListener('input', (e) => {
-        const val = e.target.value;
-        if (val && index < digitInputs.length - 1) {
-          digitInputs[index + 1].focus();
-        }
-        updateCombinedMeterValue();
-      });
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace' && !input.value && index > 0) {
-          digitInputs[index - 1].focus();
-        }
+    document.addEventListener('DOMContentLoaded', () => {
+      const digitInputs = document.querySelectorAll('.onda-digit-input');
+      const hiddenMeterInput = document.getElementById('meter-value');
+
+      function updateCombinedMeterValue() {
+        const combined = Array.from(digitInputs).map(i => i.value !== '' ? i.value : '').join('');
+        hiddenMeterInput.value = combined;
+      }
+
+      digitInputs.forEach((input, index) => {
+        // Mencegah input selain angka
+        input.addEventListener('beforeinput', (e) => {
+          if (e.data && !/^[0-9]$/.test(e.data)) {
+            e.preventDefault();
+          }
+        });
+
+        // Event Input: Mendukung angka 0-9 & lompat otomatis ke digit berikutnya
+        input.addEventListener('input', (e) => {
+          const val = e.target.value;
+          
+          if (/^[0-9]$/.test(val)) {
+            if (index < digitInputs.length - 1) {
+              digitInputs[index + 1].focus();
+              digitInputs[index + 1].select();
+            }
+          } else {
+            e.target.value = '';
+          }
+          updateCombinedMeterValue();
+        });
+
+        // Event Keydown: Navigasi Backspace, Panah Kiri & Panah Kanan
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Backspace') {
+            if (!input.value && index > 0) {
+              digitInputs[index - 1].focus();
+              digitInputs[index - 1].value = '';
+            } else {
+              input.value = '';
+            }
+            updateCombinedMeterValue();
+          } else if (e.key === 'ArrowLeft' && index > 0) {
+            digitInputs[index - 1].focus();
+          } else if (e.key === 'ArrowRight' && index < digitInputs.length - 1) {
+            digitInputs[index + 1].focus();
+          }
+        });
+
+        // Auto Select Teks Saat Di-klik / Di-focus
+        input.addEventListener('focus', () => {
+          input.select();
+        });
+
+        // Fitur Tempel / Paste (misal menempelkan "0012345")
+        input.addEventListener('paste', (e) => {
+          e.preventDefault();
+          const pastedData = (e.clipboardData || window.clipboardData).getData('text').trim();
+          if (/^\d{1,7}$/.test(pastedData)) {
+            const digits = pastedData.split('');
+            digits.forEach((digit, idx) => {
+              if (index + idx < digitInputs.length) {
+                digitInputs[index + idx].value = digit;
+              }
+            });
+            const nextFocusIndex = Math.min(index + digits.length, digitInputs.length - 1);
+            digitInputs[nextFocusIndex].focus();
+            updateCombinedMeterValue();
+          }
+        });
       });
     });
-
-    function updateCombinedMeterValue() {
-      const combined = Array.from(digitInputs).map(i => i.value || '0').join('');
-      document.getElementById('meter-value').value = combined;
-    }
   </script>
 </body>
 </html>
