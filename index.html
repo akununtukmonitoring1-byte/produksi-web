@@ -1,174 +1,358 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<!-- Hubungkan Web App Manifest -->
-<link rel="manifest" href="/manifest.json">
-
-<!-- Tema warna untuk browser mobile -->
-<meta name="theme-color" content="#0284c7">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pencatatan Hasil Produksi</title>
+  
+  <!-- Web App Manifest & Meta Theme -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1e40af">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
   <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --border-color: #cbd5e1;
+      --radius: 12px;
+    }
+
     * { box-sizing: border-box; }
+    
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, sans-serif;
-      background: #f4f6f8;
-      color: #1f2937;
-      padding: 20px 12px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-color);
+      color: var(--text-main);
+      padding: 24px 16px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
+
     .container {
       max-width: 800px;
+      width: 100%;
       margin: 0 auto;
     }
+
+    /* Card Styling */
     .card {
-      background: #fff;
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      background: var(--card-bg);
+      padding: 32px;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+      margin-bottom: 24px;
+      border: 1px solid #e2e8f0;
+    }
+
+    h1, h2 {
+      margin-top: 0;
+      color: #0f172a;
+      font-weight: 700;
+    }
+
+    h1 { font-size: 1.5rem; margin-bottom: 8px; }
+    h2 { font-size: 1.25rem; margin-bottom: 16px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
       margin-bottom: 24px;
     }
-    h1, h2 { margin-top: 0; color: #111827; }
+
+    /* Grid Form */
     .grid-2 {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
     }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
     label {
       display: block;
-      margin: 10px 0 4px;
-      font-size: 0.88rem;
+      margin-bottom: 6px;
+      font-size: 0.875rem;
       font-weight: 600;
+      color: #334155;
     }
+
     input, textarea {
       width: 100%;
-      padding: 10px;
-      border: 1px solid #d1d5db;
+      padding: 11px 14px;
+      border: 1px solid var(--border-color);
       border-radius: 8px;
       font: inherit;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+      background: #fff;
     }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    /* File Input Custom Style */
+    input[type="file"] {
+      padding: 8px;
+      background: #f8fafc;
+      cursor: pointer;
+    }
+
+    /* Button */
     button {
-      background: #2563eb;
+      background: var(--primary);
       color: #fff;
       border: 0;
-      padding: 12px 18px;
+      padding: 12px 20px;
       border-radius: 8px;
       cursor: pointer;
       font-weight: 600;
+      font-size: 1rem;
       width: 100%;
       margin-top: 16px;
+      transition: background 0.2s ease, transform 0.1s ease;
     }
-    button:disabled { opacity: 0.6; cursor: default; }
-    .error { color: #dc2626; font-size: 0.88rem; margin-top: 8px; }
-    
+
+    button:hover { background: var(--primary-dark); }
+    button:active { transform: scale(0.99); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* Alert / Error Message */
+    .error {
+      color: #dc2626;
+      font-size: 0.875rem;
+      margin-top: 10px;
+      font-weight: 500;
+    }
+
+    /* Hidden Utility */
+    .hidden { display: none !important; }
+
     /* Tabel Riwayat */
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; min-width: 650px; font-size: 0.9rem; }
-    th, td { padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: left; }
-    th { background: #f9fafb; }
-    .img-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 650px;
+      font-size: 0.9rem;
+      background: #fff;
+    }
+
+    th, td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #e2e8f0;
+      text-align: left;
+    }
+
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    .img-thumb {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+    }
+
+    /* Toast Notification */
     #toast {
       position: fixed;
-      bottom: 20px;
+      bottom: 24px;
       left: 50%;
-      transform: translateX(-50%);
-      background: #10b981;
+      transform: translateX(-50%) translateY(100px);
+      background: #059669;
       color: white;
-      padding: 10px 20px;
-      border-radius: 20px;
-      display: none;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-weight: 600;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+      z-index: 1000;
     }
+
+    #toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* User Info Bar */
+    .user-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      background: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    .user-bar span { font-size: 0.9rem; color: var(--text-muted); }
+    .user-bar strong { color: var(--text-main); }
+    .btn-logout {
+      background: #fee2e2;
+      color: #991b1b;
+      width: auto;
+      margin: 0;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+    }
+    .btn-logout:hover { background: #fecaca; }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <div class="card">
-      <h1>Input Hasil Produksi</h1>
-      <form id="prod-form">
-        <div class="grid-2">
-          <div>
-            <label for="a1">Input 1 (mis. Target)</label>
-            <input type="number" id="a1" step="any" required>
-          </div>
-          <div>
-            <label for="a2">Input 2 (mis. Total Hasil)</label>
-            <input type="number" id="a2" step="any" required>
-          </div>
-          <div>
-            <label for="a3">Input 3 (mis. Bagus/OK)</label>
-            <input type="number" id="a3" step="any" required>
-          </div>
-          <div>
-            <label for="a4">Input 4 (mis. Reject/NG)</label>
-            <input type="number" id="a4" step="any" required>
-          </div>
-          <div>
-            <label for="a5">Input 5 (mis. Downtime)</label>
-            <input type="number" id="a5" step="any" required>
-          </div>
-          <div>
-            <label for="a6">Input 6 (mis. Jam Kerja)</label>
-            <input type="number" id="a6" step="any" required>
-          </div>
-          <div>
-            <label for="a7">Input 7 (mis. Jumlah Operator)</label>
-            <input type="number" id="a7" step="any" required>
-          </div>
+
+    <!-- HALAMAN LOGIN -->
+    <div id="login-card" class="card">
+      <h1>Silahkan Login</h1>
+      <p class="subtitle">Masuk menggunakan akun terotorisasi untuk mengakses sistem pencatatan.</p>
+      
+      <form id="login-form">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" placeholder="Masukkan username..." required>
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Masukkan password..." required>
         </div>
 
-        <label for="p-foto">Lampirkan Foto Bukti Produksi</label>
-        <input type="file" id="p-foto" accept="image/*" required>
-
-        <label for="p-ket">Keterangan / Catatan Tambahan</label>
-        <textarea id="p-ket" rows="2" placeholder="Catatan shift/operator..."></textarea>
-
-        <p id="form-msg" class="error"></p>
-        <button id="save-btn" type="submit">Simpan Hasil Produksi</button>
+        <p id="login-msg" class="error"></p>
+        <button type="submit">Masuk ke Sistem</button>
       </form>
     </div>
 
-    <!-- Riwayat Data -->
-    <div class="card">
-      <h2>Riwayat Laporan Produksi</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Waktu</th>
-              <th>Foto</th>
-              <th>Angka 1 - 7</th>
-              <th>Keterangan</th>
-            </tr>
-          </thead>
-          <tbody id="history-body">
-            <tr><td colspan="4">Memuat data...</td></tr>
-          </tbody>
-        </table>
+    <!-- HALAMAN UTAMA (DASHBOARD APLIKASI) -->
+    <div id="app-wrapper" class="hidden">
+      
+      <!-- Bar Informasi Pengguna -->
+      <div class="user-bar">
+        <span>Pengguna aktif: <strong id="current-user-label">-</strong></span>
+        <button id="logout-btn" class="btn-logout" type="button">Keluar</button>
       </div>
+
+      <!-- Form Input Hasil Produksi -->
+      <div class="card">
+        <h1>Input Hasil Produksi</h1>
+        <p class="subtitle">Lengkapi formulir parameter produksi di bawah ini dengan benar.</p>
+        
+        <form id="prod-form">
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="a1">Input 1 (mis. Target)</label>
+              <input type="number" id="a1" step="any" required>
+            </div>
+            <div class="form-group">
+              <label for="a2">Input 2 (mis. Total Hasil)</label>
+              <input type="number" id="a2" step="any" required>
+            </div>
+            <div class="form-group">
+              <label for="a3">Input 3 (mis. Bagus/OK)</label>
+              <input type="number" id="a3" step="any" required>
+            </div>
+            <div class="form-group">
+              <label for="a4">Input 4 (mis. Reject/NG)</label>
+              <input type="number" id="a4" step="any" required>
+            </div>
+            <div class="form-group">
+              <label for="a5">Input 5 (mis. Downtime)</label>
+              <input type="number" id="a5" step="any" required>
+            </div>
+            <div class="form-group">
+              <label for="a6">Input 6 (mis. Jam Kerja)</label>
+              <input type="number" id="a6" step="any" required>
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label for="a7">Input 7 (mis. Jumlah Operator)</label>
+              <input type="number" id="a7" step="any" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="p-foto">Lampirkan Foto Bukti Produksi</label>
+            <input type="file" id="p-foto" accept="image/*" required>
+          </div>
+
+          <div class="form-group">
+            <label for="p-ket">Keterangan / Catatan Tambahan</label>
+            <textarea id="p-ket" rows="2" placeholder="Catatan shift/operator..."></textarea>
+          </div>
+
+          <p id="form-msg" class="error"></p>
+          <button id="save-btn" type="submit">Simpan Hasil Produksi</button>
+        </form>
+      </div>
+
+      <!-- Riwayat Data -->
+      <div class="card">
+        <h2>Riwayat Laporan Produksi</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Waktu</th>
+                <th>Foto</th>
+                <th>Angka 1 - 7</th>
+                <th>Keterangan</th>
+              </tr>
+            </thead>
+            <tbody id="history-body">
+              <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Memuat data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
+
   </div>
 
+  <!-- Toast Notifikasi -->
   <div id="toast">Berhasil disimpan!</div>
 
+  <!-- Skrip Eksternal & Aplikasi -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="app.js"></script>
+  
   <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js')
-        .then((reg) => {
-          console.log('Service Worker berhasil didaftarkan: ', reg.scope);
-        })
-        .catch((err) => {
-          console.log('Pendaftaran Service Worker gagal: ', err);
-        });
-    });
-  }
-</script>
+    // Pendaftaran Service Worker untuk PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then((reg) => {
+            console.log('Service Worker berhasil didaftarkan: ', reg.scope);
+          })
+          .catch((err) => {
+            console.log('Pendaftaran Service Worker gagal: ', err);
+          });
+      });
+    }
+  </script>
 </body>
 </html>
