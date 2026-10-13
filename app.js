@@ -140,7 +140,7 @@ if (meterForm) {
       if (fotoFile) {
         const fileName = `${Date.now()}_${fotoFile.name}`;
         const { data: uploadData, error: uploadError } = await supabaseClient.storage
-          .from('bukti-produksi') 
+          .from('produksi-foto') 
           .upload(fileName, fotoFile);
 
         if (uploadError) throw uploadError;
