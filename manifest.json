@@ -1,5 +1,5 @@
 {
-  "name": "Pencatatan Meteran Air",
+  "name": "Pencatatan Meteran Air ONDA",
   "short_name": "Meteran Air",
   "start_url": "/",
   "display": "standalone",
@@ -13,7 +13,7 @@
     },
     {
       "src": "/icon-512.png",
-      "sizes": "512x192",
+      "sizes": "512x512",
       "type": "image/png"
     }
   ]
