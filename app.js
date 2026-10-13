@@ -66,20 +66,32 @@ function showMainView(user) {
   viewLoading.classList.add('hidden');
   viewLogin.classList.add('hidden');
   viewMain.classList.remove('hidden');
-  userInfo.textContent = user.email;
+  
+  // Menampilkan username asli (membuang domain belakang jika menggunakan format email dummy)
+  const cleanEmail = user.email ? user.email.split('@')[0] : 'Petugas';
+  userInfo.textContent = cleanEmail;
   loadRiwayat();
 }
 
-// Proses Login
+// Proses Login dengan Username Saja
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   loginError.textContent = '';
-  const email = document.getElementById('email').value;
+  
+  const usernameInput = document.getElementById('email').value.trim().toLowerCase();
   const password = document.getElementById('password').value;
 
-  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  // Konversi username menjadi format email internal Supabase
+  // Contoh: petugas1 menjadi petugas1@monitoring.local
+  const fakeEmail = `${usernameInput}@monitoring.local`;
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ 
+    email: fakeEmail, 
+    password: password 
+  });
+
   if (error) {
-    loginError.textContent = 'Gagal masuk: ' + error.message;
+    loginError.textContent = 'Gagal masuk: Username atau password salah.';
   } else {
     showMainView(data.user);
   }
@@ -114,6 +126,7 @@ meterForm.addEventListener('submit', async (e) => {
   const fotoFile = document.getElementById('meter-foto').files[0];
   const keterangan = document.getElementById('meter-ket').value;
   const { data: { user } } = await supabaseClient.auth.getUser();
+  const petugasName = user.email ? user.email.split('@')[0] : 'Petugas';
 
   let fotoUrl = '';
 
@@ -122,7 +135,7 @@ meterForm.addEventListener('submit', async (e) => {
     if (fotoFile) {
       const fileName = `${Date.now()}_${fotoFile.name}`;
       const { data: uploadData, error: uploadError } = await supabaseClient.storage
-        .from('bukti-produksi') // Sesuaikan nama bucket storage Anda di Supabase
+        .from('bukti-produksi') 
         .upload(fileName, fotoFile);
 
       if (uploadError) throw uploadError;
@@ -134,7 +147,7 @@ meterForm.addEventListener('submit', async (e) => {
       fotoUrl = publicUrlData.publicUrl;
     }
 
-    // 2. Simpan Data ke Tabel Database (asumsi nama tabel: pencatatan_meter)
+    // 2. Simpan Data ke Tabel Database
     const { error: insertError } = await supabaseClient
       .from('pencatatan_meter')
       .insert([
@@ -142,7 +155,7 @@ meterForm.addEventListener('submit', async (e) => {
           nilai_meteran: meterVal,
           foto_url: fotoUrl,
           keterangan: keterangan,
-          petugas: user.email,
+          petugas: petugasName,
           created_at: new Date()
         }
       ]);
@@ -151,7 +164,6 @@ meterForm.addEventListener('submit', async (e) => {
 
     showToast('Pencatatan berhasil disimpan!');
     meterForm.reset();
-    // Reset kotak digit
     digitInputs.forEach(input => input.value = '');
     meterValueInput.value = '';
     loadRiwayat();
