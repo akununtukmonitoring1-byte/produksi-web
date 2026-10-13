@@ -207,9 +207,13 @@ async function loadRiwayat() {
     data.forEach(item => {
       const tr = document.createElement('tr');
       const tanggal = new Date(item.created_at).toLocaleString('id-ID');
-      const fotoHtml = item.foto_url 
-        ? `<a href="${item.foto_url}" target="_blank"><img src="${item.foto_url}" style="width: 44px; height: 44px; object-fit: cover; border-radius: 6px;"></a>` 
-        : 'Tidak ada';
+      const fotoHtml = (item.foto_url && item.foto_url.trim() !== '')
+  ? `<a href="${item.foto_url}" target="_blank">
+       <img src="${item.foto_url}" 
+            onerror="this.onerror=null; this.src='https://via.placeholder.com/44?text=Error';" 
+            style="width: 44px; height: 44px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1;">
+     </a>` 
+  : '<span style="color: #94a3b8; font-size: 0.85rem;">Tidak ada foto</span>';
 
       tr.innerHTML = `
         <td>${tanggal}</td>
