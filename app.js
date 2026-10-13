@@ -41,17 +41,12 @@ tabs.forEach(tab => {
   });
 });
 
-// Cek Sesi Saat Aplikasi Dimuat
-document.addEventListener('DOMContentLoaded', async () => {
-  try {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (session) {
-      showMainView(session.user);
-    } else {
-      showLoginView();
-    }
-  } catch (err) {
-    console.error(err);
+// Cek Sesi Login dari LocalStorage saat Aplikasi Dimuat
+document.addEventListener('DOMContentLoaded', () => {
+  const savedUser = localStorage.getItem('current_user');
+  if (savedUser) {
+    showMainView(savedUser);
+  } else {
     showLoginView();
   }
 });
@@ -62,44 +57,46 @@ function showLoginView() {
   viewMain.classList.add('hidden');
 }
 
-function showMainView(user) {
+function showMainView(username) {
   viewLoading.classList.add('hidden');
   viewLogin.classList.add('hidden');
   viewMain.classList.remove('hidden');
-  
-  // Menampilkan username asli (membuang domain belakang jika menggunakan format email dummy)
-  const cleanEmail = user.email ? user.email.split('@')[0] : 'Petugas';
-  userInfo.textContent = cleanEmail;
+  userInfo.textContent = username;
   loadRiwayat();
 }
 
-// Proses Login dengan Username Saja
+// Proses Login Berbasis Tabel 'petugas'
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   loginError.textContent = '';
   
-  const usernameInput = document.getElementById('email').value.trim().toLowerCase();
-  const password = document.getElementById('password').value;
+  const usernameInput = document.getElementById('username').value.trim();
+  const passwordInput = document.getElementById('password').value;
 
-  // Konversi username menjadi format email internal Supabase
-  // Contoh: petugas1 menjadi petugas1@monitoring.local
-  const fakeEmail = `${usernameInput}@monitoring.local`;
+  try {
+    const { data, error } = await supabaseClient
+      .from('petugas')
+      .select('*')
+      .eq('username', usernameInput)
+      .eq('password', passwordInput)
+      .single();
 
-  const { data, error } = await supabaseClient.auth.signInWithPassword({ 
-    email: fakeEmail, 
-    password: password 
-  });
-
-  if (error) {
-    loginError.textContent = 'Gagal masuk: Username atau password salah.';
-  } else {
-    showMainView(data.user);
+    if (error || !data) {
+      loginError.textContent = 'Username atau password salah!';
+    } else {
+      // Simpan sesi ke localStorage
+      localStorage.setItem('current_user', data.username);
+      showMainView(data.username);
+    }
+  } catch (err) {
+    loginError.textContent = 'Terjadi kesalahan sistem.';
+    console.error(err);
   }
 });
 
 // Proses Logout
-logoutBtn.addEventListener('click', async () => {
-  await supabaseClient.auth.signOut();
+logoutBtn.addEventListener('click', () => {
+  localStorage.removeItem('current_user');
   showLoginView();
 });
 
@@ -125,8 +122,7 @@ meterForm.addEventListener('submit', async (e) => {
 
   const fotoFile = document.getElementById('meter-foto').files[0];
   const keterangan = document.getElementById('meter-ket').value;
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  const petugasName = user.email ? user.email.split('@')[0] : 'Petugas';
+  const currentPetugas = localStorage.getItem('current_user') || 'Admin';
 
   let fotoUrl = '';
 
@@ -155,7 +151,7 @@ meterForm.addEventListener('submit', async (e) => {
           nilai_meteran: meterVal,
           foto_url: fotoUrl,
           keterangan: keterangan,
-          petugas: petugasName,
+          petugas: currentPetugas,
           created_at: new Date()
         }
       ]);
