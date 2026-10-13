@@ -2,6 +2,12 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
 
 let historyData = [];
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  console.label('PWA siap diinstal');
+});
 
 function showView(name) {
   $("view-loading").classList.toggle("hidden", name !== "loading");
