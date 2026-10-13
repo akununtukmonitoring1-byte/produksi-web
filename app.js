@@ -230,5 +230,5 @@ exportExcelBtn.addEventListener('click', async () => {
   const worksheet = XLSX.utils.json_to_sheet(excelData);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Riwayat Meteran");
-  XLSX.writeFile(workbook, "Laporan_Meteran_Air_Onda.xlsx");
+  XLSX.writeFile(workbook, "Laporan_Meteran_Air.xlsx");
 });
