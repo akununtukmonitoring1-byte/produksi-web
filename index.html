@@ -151,9 +151,9 @@
     <p class="muted">Masuk untuk pencatatan meteran air</p>
     <form id="login-form">
       <label for="username">Username</label>
-      <input id="username" type="text" required placeholder="admin">
+      <input id="username" type="text" required placeholder="..........">
       <label for="password">Password</label>
-      <input id="password" type="password" required placeholder="adminmeter1">
+      <input id="password" type="password" required placeholder="..........">
       <p id="login-error" class="error"></p>
       <button id="login-btn" class="btn-block" type="submit">Masuk</button>
     </form>
@@ -162,7 +162,7 @@
   <!-- Halaman Utama -->
   <div id="view-main" class="hidden">
     <header class="topbar">
-      <strong>Pencatatan Meteran Air (ONDA)</strong>
+      <strong>Pencatatan Meteran Air</strong>
       <div class="user">
         <span id="user-info"></span>
         <button id="logout-btn" class="btn-small secondary" type="button">Keluar</button>
@@ -180,7 +180,7 @@
       <section id="page-catat">
         <div class="panel">
           <h2>Input Angka Meteran Air</h2>
-          <p class="muted">Masukkan 7 digit angka sesuai tampilan pada Flow Meter ONDA.</p>
+          <p class="muted">Masukkan 7 digit angka sesuai tampilan pada Flow Meter</p>
           <form id="meter-form">
             <label>Angka 7 Digit (Flow Meter)</label>
             <div class="onda-digits-container" id="onda-inputs">
@@ -241,7 +241,7 @@
   <script src="app.js"></script>
   
   <script>
-    // Skrip interaksi otomatis untuk 7 digit input ONDA (berpindah otomatis ke kotak berikutnya)
+    // Skrip interaksi otomatis untuk 7 digit input (berpindah otomatis ke kotak berikutnya)
     const digitInputs = document.querySelectorAll('.onda-digit-input');
     digitInputs.forEach((input, index) => {
       input.addEventListener('input', (e) => {
